@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Event Booking with Priority Queue & Date Availability</title>
+<!-- Google Fonts for a modern look -->
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap" rel="stylesheet" />
+<style>
+  /* Reset and base styles */
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  body {
+    font-family: 'Montserrat', sans-serif;
+    background-image: url('https://i.pinimg.com/736x/52/a9/71/52a971cf1de9e90038103887461d00fa.jpg');
+    background-size: cover;
+    background-position: center;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    color: #252c3a;
+  }
+  /* Overlay for a softer background */
+  body::before {
+    content: "";
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(35, 36, 36, 0.2);
+    z-index: -1;
+  }
+  /* Header styling */
+  header {
+    background-color: rgba(0, 0, 0, 0.4);
+    padding: 30px 20px;
+    text-align: center;
+  }
+  header h1 {
+    color: #000000;
+    font-size: 2.5em;
+    font-weight: 700;
+  }
+  /* Navigation styles */
+  nav {
+    background-color: rgba(0, 0, 0, 0.3);
+    display: flex;
+    justify-content: center;
+    padding: 12px 20px;
+    gap: 15px;
+  }
+  nav button {
+    background-color: #000000;
+    color: #f1f7ff;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 6px;
+    font-size: 1em;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s;
+  }
+  nav button:hover {
+    background-color: #000000;
+    transform: scale(1.05);
+  }
+  /* Section styles */
+section {
+    display: none;
+    padding: 30px 20px;
+    max-width: 900px;
+    margin: 20px auto;
+    background-color: rgba(255, 255, 255, 0.95);
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+  }
+  section.active {
+    display: block;
+  }
+  h2 {
+    text-align: justify;
+    margin-bottom: 20px;
+    font-size: 2em;
+    font-weight: 600;
+    color: #030303;
+  }
+  /* Booking form styles */
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+label {
+    font-weight: 600;
+    margin-bottom: 5px;
+    display: block;
+  }
+input[type=text], input[type=email], input[type=date], select {
+    padding: 12px 15px;
+    border-radius: 8px;
+    border: 1px solid #768daa;
+    font-size: 1em;
+    transition: border-color 0.2s;
+  }
+input[type=text]:focus, input[type=email]:focus, input[type=date]:focus, select:focus {
+    border-color: #000000;
+    outline: none;
+  }
+button {
+    background-color: #000000;
+    color: #fff;
+    padding: 14px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s;
+  }
+button:hover {
+    background-color: #000000;
+    transform: scale(1.02);
+  }
+  /* Queue list styles */
+#queueList {
+    list-style: none;
+    padding: 0;
+  }
+#queueList li {
+    background: #000000;
+    padding: 14px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    border: 1px solid #6086d8;
+    font-size: 0.95em;
+  }
+.priority-label {
+    font-weight: 600;
+    color: #d9534f; /* Bootstrap red */
+    margin-left: 8px;
+  }
+  /* Receipt styling */
+#receipt {
+    margin-top: 20px;
+    background: #e9f7ef;
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid #b2dfdb;
+  }
+  /* Service images box styling */
+#imagesBox {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 30px;
+    flex-wrap: wrap;
+  }
+#imagesBox img {
+    width: 180px;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 12px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+#imagesBox img:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+  }
+@media(max-width: 600px){
+    #imagesBox {
+        flex-direction: column;
+        align-items: center;
+    }
+    #imagesBox img {
+        width: 120px;
+        height: 120px;
+    }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>HIRE US FOR FUN EVENT!</h1>
+</header>
+
+<nav>
+  <button id="serviceBtn">SERVICE</button>
+  <button id="aboutBtn">ABOUT</button>
+  <button id="queueBtn">QUE LINE</button>
+</nav>
+
+<!-- Home -->
+<section id="homeSection" class="active">
+  <div style="text-align:center;">
+    <button id="bookBtn" class="button">BOOK APPOINTMENT</button>
+  </div>
+</section>
+
+<!-- Service -->
+<section id="serviceSection">
+  <h2>Our Services</h2>
+  <ul style="list-style: inside disc; margin-bottom: 30px;">
+    <li>Offers dancing show</li>
+    <li>Meet and Great</li>
+    <li>Singing live</li>
+    <li>Instrumental play</li>
+    <li>ENTERTAINMENT RELATED</li>
+  </ul>
+  <!-- Professional Image Box -->
+  <div id="imagesBox">
+    <!-- Replace the src with your own images to customize -->
+    <img src="https://i.pinimg.com/736x/de/e5/fa/dee5fa625f73140375a242d9029432fe.jpg" alt="Service Image 1" />
+    <img src="https://i.pinimg.com/736x/6e/50/40/6e5040e5fc999333a3f09b48de036350.jpg" alt="Service Image 2" />
+    <img src="https://i.pinimg.com/736x/46/ae/f6/46aef6b7933304af47713f84cd46db0f.jpg" alt="Service Image 3" />
+  </div>
+  <div style="text-align:center; margin-top:30px;">
+    <button id="backFromService" class="button">Back to Home</button>
+  </div>
+</section>
+
+<!-- About -->
+<section id="aboutSection">
+  <h2>About</h2>
+  <p style="text-align:center;">This website is for booking appointment for the band of enhypen. ENHYPEN is ready to serve you a fun and entertaining talent to make your special event more fun and memorable that you can keep LIFETIME </p>
+  <div style="text-align:center; margin-top:20px;">
+    <button id="backFromAbout" class="button">Back to Home</button>
+  </div>
+</section>
+
+<!-- Queue -->
+<section id="queueSection">
+  <h2>Queuing Line</h2>
+  <ul id="queueList"></ul>
+  <div style="margin-top:20px; display:flex; justify-content: center; gap:15px;">
+    <button id="serveBtn" class="button">SERVE NEXT</button>
+    <button id="servePriorityBtn" class="button">SERVE PRIORITY</button>
+  </div>
+  <div style="text-align:center; margin-top:20px;">
+    <button id="backFromQueue" class="button">Back to Home</button>
+  </div>
+</section>
+
+<!-- Booking Form -->
+<section id="bookingSection">
+  <h2 style="text-align:center;">Book an Appointment</h2>
+  <form id="bookingForm">
+    <label for="fullName">Full Name:</label>
+    <input type="text" id="fullName" required />
+
+    <label for="email">Email:</label>
+    <input type="email" id="email" required />
+
+    <label for="dateOfBooking">Date of Booking:</label>
+    <input type="date" id="dateOfBooking" required />
+
+    <label for="dateOfEvent">Date of Event:</label>
+    <input type="date" id="dateOfEvent" required />
+
+    <label for="reason">Reason for Booking:</label>
+    <select id="reason" required>
+      <option value="">Select a reason</option>
+      <option value="Birthday">Birthday</option>
+      <option value="Wedding">Wedding</option>
+      <option value="Anniversary">Anniversary Celebration</option>
+      <option value="Debut">Debut</option>
+      <option value="Family Gathering">Family Gathering</option>
+    </select>
+
+    <label for="hours">Duration (hours):</label>
+    <select id="hours" required>
+      <option value="1">1 hour - ₱20,000</option>
+      <option value="2">2 hours - ₱40,000</option>
+      <option value="3">3 hours - ₱60,000</option>
+    </select>
+
+    <label>
+      <input type="checkbox" id="priorityCheckbox" />
+      Priority Booking (+₱2,000)
+    </label>
+
+    <button type="submit" class="button">Submit Booking</button>
+  </form>
+  <div style="text-align:center; margin-top:20px;">
+    <button id="backFromBooking" class="button">Back to Home</button>
+  </div>
+</section>
+
+<!-- Confirmation -->
+<section id="confirmationSection">
+  <h2>APPOINTMENT SUCCESSFULLY BOOKED !!</h2>
+  <div id="receipt"></div>
+  <div style="text-align:center; margin-top:20px;">
+    <button id="newBookingBtn" class="button">BOOK APPOINTMENT</button>
+  </div>
+</section>
+
+<script>
+  // Sections object
+  const sections = {
+    home: document.getElementById('homeSection'),
+    service: document.getElementById('serviceSection'),
+    about: document.getElementById('aboutSection'),
+    queue: document.getElementById('queueSection'),
+    booking: document.getElementById('bookingSection'),
+    confirmation: document.getElementById('confirmationSection')
+  };
+
+  // Navigation buttons
+  document.getElementById('serviceBtn').onclick = () => showSection(sections.service);
+  document.getElementById('aboutBtn').onclick = () => showSection(sections.about);
+  document.getElementById('queueBtn').onclick = () => { renderQueue(); showSection(sections.queue); };
+  document.getElementById('bookBtn').onclick = () => showSection(sections.booking);
+  document.getElementById('backFromService').onclick = () => showSection(sections.home);
+  document.getElementById('backFromAbout').onclick = () => showSection(sections.home);
+  document.getElementById('backFromQueue').onclick = () => showSection(sections.home);
+  document.getElementById('backFromBooking').onclick = () => showSection(sections.home);
+  document.getElementById('newBookingBtn').onclick = () => showSection(sections.home);
+
+  // Queue data
+  let queue = [];
+  let bookedDates = [];
+
+  // Helper to toggle sections
+  function showSection(section) {
+    for (const key in sections) {
+      sections[key].classList.remove('active');
+    }
+    section.classList.add('active');
+  }
+
+  // Check if date is available
+  function isDateAvailable(dateStr) {
+    return !bookedDates.includes(dateStr);
+  }
+
+  // Get next 3 available dates
+  function getAlternativeDates(currentDateStr) {
+    const suggestions = [];
+    const currentDate = new Date(currentDateStr);
+    let daysChecked = 0;
+    const maxDays = 30;
+    let dateToCheck = new Date(currentDate);
+    while (suggestions.length < 3 && daysChecked < maxDays) {
+      dateToCheck.setDate(dateToCheck.getDate() + 1);
+      const dateStr = dateToCheck.toISOString().split('T')[0];
+      if (!bookedDates.includes(dateStr)) {
+        suggestions.push(dateStr);
+      }
+      daysChecked++;
+    }
+    return suggestions;
+  }
+
+  // Booking form submit handler
+document.getElementById('bookingForm').onsubmit = e => {
+  e.preventDefault();
+
+  const fullName = document.getElementById('fullName').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const dateOfBooking = document.getElementById('dateOfBooking').value;
+  const dateOfEvent = document.getElementById('dateOfEvent').value;
+  const reason = document.getElementById('reason').value;
+  const hours = parseInt(document.getElementById('hours').value);
+  const basePrice = hours * 20000;
+  const isPriority = document.getElementById('priorityCheckbox').checked;
+  const extraFee = isPriority ? 2000 : 0;
+  const totalPrice = basePrice + extraFee;
+
+  if (!isDateAvailable(dateOfEvent)) {
+    const suggestions = getAlternativeDates(dateOfEvent);
+    alert(`The date ${dateOfEvent} is already booked.\nNext available dates: ${suggestions.join(', ')}`);
+    return;
+  }
+
+  // Mark date as booked
+  bookedDates.push(dateOfEvent);
+
+  // Add appointment to queue
+  const appointment = {
+    fullName,
+    email,
+    dateOfBooking,
+    dateOfEvent,
+    reason,
+    hours,
+    price: totalPrice,
+    priority: isPriority
+  };
+  queue.push(appointment);
+  alert(`Added to queue!${isPriority ? ' (Priority)' : ''}`);
+  document.getElementById('bookingForm').reset();
+  showSection(sections.home);
+};
+
+// Render Queue
+function renderQueue() {
+  const list = document.getElementById('queueList');
+  list.innerHTML = '';
+  queue.forEach((item, index) => {
+    list.innerHTML += `${index + 1}. ${item.fullName} - ${item.reason} on ${item.dateOfEvent}` + 
+      (item.priority ? ' <span class="priority-label">[Priority]</span>' : '') + '<br>';
+  });
+}
+
+// Serve next in FIFO
+document.getElementById('serveBtn').onclick = () => {
+  if (queue.length === 0) {
+    alert('No appointment in queue.');
+    return;
+  }
+  const served = queue.shift();
+  displayReceipt(served);
+  showSection(sections.confirmation);
+  renderQueue();
+};
+
+// Serve priority first
+document.getElementById('servePriorityBtn').onclick = () => {
+  if (queue.length === 0) {
+    alert('No appointment in queue.');
+    return;
+  }
+  const index = queue.findIndex(c => c.priority);
+  if (index === -1) {
+    alert('No priority clients in queue.');
+    return;
+  }
+  const [served] = queue.splice(index, 1);
+  displayReceipt(served);
+  showSection(sections.confirmation);
+  renderQueue();
+};
+
+// Show receipt
+function displayReceipt(appointment) {
+  document.getElementById('receipt').innerHTML = `
+    <p><strong>Date of Booking:</strong> ${appointment.dateOfBooking}</p>
+    <p><strong>Date of Event:</strong> ${appointment.dateOfEvent}</p>
+    <p><strong>Full Name of Client:</strong> ${appointment.fullName}</p>
+    <p><strong>Total Amount:</strong> ₱${appointment.price.toLocaleString()}</p>
+    <p style="margin-top:10px;">Pay the talent fee after the event. You may pay on cash or visa/mastercard. If booking is cancelled, you need to pay 3,000 pesos.</p>
+  `;
+}
+
+document.getElementById('backFromBooking').onclick = () => showSection(sections.home);
+document.getElementById('newBookingBtn').onclick = () => showSection(sections.home);
+</script>
+
+</body>
+</html>
